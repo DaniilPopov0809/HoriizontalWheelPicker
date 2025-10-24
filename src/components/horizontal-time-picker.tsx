@@ -35,6 +35,11 @@ export function HorizontalTimePicker({
     return i + 1
   })
 
+  // Effect to call onValueChange when selectedValue changes
+  useEffect(() => {
+    onValueChange?.(selectedValue)
+  }, [selectedValue, onValueChange])
+
   useEffect(() => {
     if (!isCounterActive || !emblaApi) return
 
@@ -58,7 +63,6 @@ export function HorizontalTimePicker({
         // Прокрутка барабана к нужной позиции
         const targetIndex = Math.max(0, next - 1)
         emblaApi.scrollTo(targetIndex, false)
-        onValueChange?.(next)
 
         return next
       })
@@ -149,9 +153,8 @@ export function HorizontalTimePicker({
     if (currentIndex >= 0 && currentIndex < seconds.length) {
       const value = seconds[currentIndex]
       setSelectedValue(value)
-      onValueChange?.(value)
     }
-  }, [emblaApi, seconds, onValueChange])
+  }, [emblaApi, seconds])
 
   const handlePointerUp = useCallback(() => {
     if (!emblaApi) return
