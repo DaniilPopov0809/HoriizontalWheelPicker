@@ -195,13 +195,11 @@ export function HorizontalTimePicker({
                 <div
                   key={second}
                   className={cn(
-                    "flex-shrink-0 w-12 h-16 flex items-center justify-center text-sm font-medium transition-all duration-300 ease-out",
+                    "flex-shrink-0 w-12 h-16 flex items-center justify-center text-sm font-medium transition-all duration-300 ease-out text-gray-500",
                     "transform-gpu", // Use GPU for better performance
-                    isSelected
-                      ? "text-blue-600 font-bold text-lg"
-                      : isMultipleOf10
-                        ? "text-blue-600 font-semibold "
-                        : "text-gray-500"
+                    isSelected ? "text-blue-600 font-bold text-lg" :
+                      
+                    isMultipleOf10 && "font-semibold" 
                   )}
                   style={{
                     transform: `scale(${scale}) translateZ(${translateZ}px)`,
@@ -217,17 +215,16 @@ export function HorizontalTimePicker({
                 >
                   <div
                     className={cn(
-                      "w-full h-full flex items-center justify-center rounded-lg transition-all duration-300",
-                      isMultipleOf10
-                        ? "bg-blue-100"
-                        : "bg-gradient-to-b from-gray-50 to-gray-100"
+                      "w-full h-full flex items-center justify-center rounded-lg transition-all duration-300 bg-gradient-to-b from-gray-50 to-gray-100",
+                      isMultipleOf10 && !isSelected && "bg-blue-100"
+                        
                     )}
                     style={{
                       transform: isSelected ? 'scale(1.1)' : 'scale(1)',
                       boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
                     }}
                   >
-                    {isMultipleOf10 ? second : '|'}
+                    {'|'}
                   </div>
                 </div>
               )
