@@ -31,8 +31,8 @@ export function HorizontalTimePicker({
   })
 
   // Create array of seconds from 0 to 60
-  const seconds = Array.from({ length: 60 }, (_, i) => {
-    return i + 1
+  const seconds = Array.from({ length: 61 }, (_, i) => {
+    return i
   })
 
   // Effect to call onValueChange when selectedValue changes
@@ -53,15 +53,15 @@ export function HorizontalTimePicker({
       setSelectedValue((prev) => {
         const next = prev - 1
 
-        if (next <= 0) {
-          clearInterval(id)
-          setSelectedValue(defaultValue + 1)
-          setIsCounterActive(false)
-          return 0
+        if (next < 0) {
+          clearInterval(id);
+          setIsCounterActive(false);
+          emblaApi.scrollTo(defaultValue, false);
+          return defaultValue;
         }
 
         // Прокрутка барабана к нужной позиции
-        const targetIndex = Math.max(0, next - 1)
+        const targetIndex = Math.max(0, next)
         emblaApi.scrollTo(targetIndex, false)
 
         return next
@@ -201,7 +201,7 @@ export function HorizontalTimePicker({
     if (!emblaApi) return
 
     // Scroll to 11th element 
-    emblaApi.scrollTo(defaultValue - 1)
+    emblaApi.scrollTo(defaultValue)
   }, [emblaApi])
 
   return (
