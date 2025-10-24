@@ -18,6 +18,9 @@ export function HorizontalTimePicker({
   const [selectedValue, setSelectedValue] = useState(defaultValue)
   const [scrollDirection, setScrollDirection] = useState<'left' | 'right' | null>(null)
   const [lastScrollProgress, setLastScrollProgress] = useState(0)
+  const [isCounterActive, setIsCounterActive] = useState<boolean>(false);
+  const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null)
+  const [lastButtonClickTime, setLastButtonClickTime] = useState<number>(0)
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
     containScroll: false,
@@ -27,10 +30,44 @@ export function HorizontalTimePicker({
     duration: 25, // Fast animation for buttons and snapping
   })
 
-  // Create array of seconds from 1 to 60
+  // Create array of seconds from 0 to 60
   const seconds = Array.from({ length: 60 }, (_, i) => {
     return i + 1
   })
+
+  useEffect(() => {
+    if (!isCounterActive || !emblaApi) return
+
+    if (selectedValue <= 0) {
+      setIsCounterActive(false)
+      if (timerId) clearInterval(timerId)
+      return
+    }
+
+    const id = setInterval(() => {
+      setSelectedValue((prev) => {
+        const next = prev - 1
+
+        if (next <= 0) {
+          clearInterval(id)
+          setSelectedValue(defaultValue + 1)
+          setIsCounterActive(false)
+          return 0
+        }
+
+        // Прокрутка барабана к нужной позиции
+        const targetIndex = Math.max(0, next - 1)
+        emblaApi.scrollTo(targetIndex, false)
+        onValueChange?.(next)
+
+        return next
+      })
+    }, 1000)
+
+    setTimerId(id)
+
+    return () => clearInterval(id)
+  }, [isCounterActive, emblaApi])
 
 
   // Function to find nearest multiple of 10 considering direction
@@ -62,20 +99,30 @@ export function HorizontalTimePicker({
   const scrollLeft = useCallback(() => {
     if (!emblaApi) return
 
+    const currentTime = Date.now()
+    if (currentTime - lastButtonClickTime < 500) return
+
+    setLastButtonClickTime(currentTime)
+
     const currentIndex = Math.round(emblaApi.scrollProgress() * (seconds.length - 1))
     const targetIndex = Math.max(0, currentIndex - 10)
     // Smooth scroll animation (false = with animation)
     emblaApi.scrollTo(targetIndex, false)
-  }, [emblaApi, seconds])
+  }, [emblaApi, seconds, lastButtonClickTime])
 
   const scrollRight = useCallback(() => {
     if (!emblaApi) return
+
+    const currentTime = Date.now()
+    if (currentTime - lastButtonClickTime < 500) return
+
+    setLastButtonClickTime(currentTime)
 
     const currentIndex = Math.round(emblaApi.scrollProgress() * (seconds.length - 1))
     const targetIndex = Math.min(seconds.length - 1, currentIndex + 10)
     // Smooth scroll animation (false = with animation)
     emblaApi.scrollTo(targetIndex, false)
-  }, [emblaApi, seconds])
+  }, [emblaApi, seconds, lastButtonClickTime])
 
   // Determine button states
   const canScrollLeft = selectedValue > 10
@@ -150,8 +197,8 @@ export function HorizontalTimePicker({
   useEffect(() => {
     if (!emblaApi) return
 
-    // Scroll to 10th element (index 9)
-    emblaApi.scrollTo(9)
+    // Scroll to 11th element 
+    emblaApi.scrollTo(defaultValue - 1)
   }, [emblaApi])
 
   return (
@@ -198,8 +245,8 @@ export function HorizontalTimePicker({
                     "flex-shrink-0 w-12 h-16 flex items-center justify-center text-sm font-medium transition-all duration-300 ease-out text-gray-500",
                     "transform-gpu", // Use GPU for better performance
                     isSelected ? "text-blue-600 font-bold text-lg" :
-                      
-                    isMultipleOf10 && "font-semibold" 
+
+                      isMultipleOf10 && "font-semibold"
                   )}
                   style={{
                     transform: `scale(${scale}) translateZ(${translateZ}px)`,
@@ -217,7 +264,7 @@ export function HorizontalTimePicker({
                     className={cn(
                       "w-full h-full flex items-center justify-center rounded-lg transition-all duration-300 bg-gradient-to-b from-gray-50 to-gray-100",
                       isMultipleOf10 && !isSelected && "bg-blue-100"
-                        
+
                     )}
                     style={{
                       transform: isSelected ? 'scale(1.1)' : 'scale(1)',
@@ -273,8 +320,8 @@ export function HorizontalTimePicker({
           className={cn(
             "flex items-center justify-center w-12 h-12 rounded-full border transition-all duration-200",
             canScrollRight
-              ? "bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 border-gray-300 dark:border-gray-600 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
-              : "bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-gray-200 dark:border-gray-700 shadow-sm cursor-not-allowed opacity-50"
+              ? "bg-gradient-to-b from-gray-100 to-gray-200 border-gray-300  shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
+              : "bg-gradient-to-b from-gray-50 to-gray-100  border-gray-200  shadow-sm cursor-not-allowed opacity-50"
           )}
           aria-label="Scroll right by 10"
         >
@@ -289,7 +336,15 @@ export function HorizontalTimePicker({
         </button>
       </div>
 
-
+      <div className='flex justify-center mt-5'>
+        <button className={cn('flex items-center justify-center w-24 h-12 rounded-lg border transition-all duration-200 bg-gradient-to-b from-gray-100 to-gray-200', isCounterActive && "bg-gradient-to-b from-gray-50 to-gray-100  border-gray-200  shadow-sm cursor-not-allowed opacity-50")}
+          onClick={() => {
+            if (!isCounterActive && selectedValue >= defaultValue) {
+              setIsCounterActive(true)
+            }
+          }}
+        >Start</button>
+      </div>
     </div>
   )
 }
